@@ -4,8 +4,8 @@ import argparse, hashlib, json, os, stat, tarfile, urllib.request, zipfile
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parent.parent
-PIN = json.loads((ROOT / 'runtime-sources.json').read_text())
-VERSION = json.loads((ROOT / 'package.json').read_text())['version']
+PIN = json.loads((ROOT / 'runtime-sources.json').read_text(encoding='utf-8'))
+VERSION = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))['version']
 DIRECTORIES = ['src', 'public', 'scripts', 'docs', 'site', 'test']
 FILES = ['package.json', 'package-lock.json', 'README.md', 'AGENTS.md', 'LICENSE', 'SECURITY.md', 'CONTRIBUTING.md', 'compose.yaml', 'Dockerfile', '.dockerignore', 'runtime-sources.json', '启动大肥鱼.command', '启动大肥鱼.cmd']
 
@@ -53,7 +53,7 @@ def build(platform, cache, out):
         paths += [p for p in ws.rglob('*') if p.is_file() and not p.is_symlink()]
         for path in sorted(paths):
             add_bytes(archive, prefix + path.relative_to(ROOT).as_posix(), path.read_bytes(), 0o755 if path.suffix == '.command' else 0o644)
-        manifest = json.loads((ROOT / 'version-manifest.json').read_text())
+        manifest = json.loads((ROOT / 'version-manifest.json').read_text(encoding='utf-8'))
         manifest.update(artifacts=[], packaged=True, releaseManifestUrl='https://raw.githubusercontent.com/youseff37/echo-companion/main/version-manifest.json')
         add_bytes(archive, prefix + 'version-manifest.json', json.dumps(manifest, ensure_ascii=False, indent=2).encode())
         if platform == 'macos-arm64':
@@ -75,7 +75,7 @@ def build(platform, cache, out):
                     relative = '/'.join(safe(name)[1:])
                     add_bytes(archive, prefix + '.bundled/' + relative, source.read(name), 0o755 if relative.endswith('.exe') else 0o644)
     checksum = digest(result)
-    result.with_suffix('.zip.sha256').write_text(checksum + '  ' + result.name + '\n')
+    result.with_suffix('.zip.sha256').write_text(checksum + '  ' + result.name + '\n', encoding='utf-8')
     print(json.dumps({'platform': platform, 'file': str(result), 'sha256': checksum, 'bytes': result.stat().st_size}))
 
 if __name__ == '__main__':
