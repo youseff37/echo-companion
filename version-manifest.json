@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "version": "0.2.0",
+  "product": "大肥鱼 · QQ 养鱼计划",
+  "repository": "https://github.com/youseff37/echo-companion",
+  "releasedAt": "2026-11-01T09:53:16Z",
+  "artifacts": [
+    {
+      "id": "macos-arm64",
+      "name": "macOS · Apple Silicon",
+      "requirements": "macOS 14+ · M 系列芯片",
+      "status": "published",
+      "url": "https://github.com/youseff37/echo-companion/releases/download/v0.2.0/dafeiyu-0.2.0-macos-arm64.zip",
+      "sha256": "dac60b2dfd061c59329014a2e7e13c78dfc1ee64971972a6d9bfc4be99be5346",
+      "validation": "macOS 26.2 / M 系列本机运行检查通过；QQ 对端收信待验收",
+      "bytes": 48678329
+    },
+    {
+      "id": "windows-x64",
+      "name": "Windows · x64",
+      "requirements": "Windows 11 x64",
+      "status": "published",
+      "url": "https://github.com/youseff37/echo-companion/releases/download/v0.2.0/dafeiyu-0.2.0-windows-x64.zip",
+      "sha256": "4414501e6238a18fd91ab543ec51d628f6dc0e5962f841a58f6e1c7a0bf85f43",
+      "validation": "Windows CI 构建与中文空格路径运行检查通过；测试版，待 Windows 11 实机和 QQ 收信验收",
+      "bytes": 44318341
+    }
+  ],
+  "sources": [
+    {
+      "name": "应用源码",
+      "url": "https://github.com/youseff37/echo-companion",
+      "license": "MIT（不含角色素材）"
+    },
+    {
+      "name": "Node.js 24.22.2 + npm（随包）",
+      "url": "https://nodejs.org/dist/v24.22.2/",
+      "pins": "runtime-sources.json",
+      "license": "Node 发行版 LICENSE 与各依赖许可"
+    },
+    {
+      "name": "ws 8.22.1（随包）",
+      "url": "https://www.npmjs.com/package/ws/v/8.22.1",
+      "license": "MIT",
+      "pins": "package-lock.json"
+    },
+    {
+      "name": "DeepSeek Harness（可选下载）",
+      "url": "https://github.com/deepseek-ai/deepseek-harness",
+      "license": "MIT",
+      "version": "0.2.1-rc.5",
+      "integrity": "sha512-WkyJZv4zl9sCAxSzRctGm58m0rilGqwR6pniBiLOz5CPDfHfDuAUicg0AAazXI7oj/Cph6/cjNTncA/rpLTXpw==",
+      "upstreamCommit": null,
+      "commitNote": "npm发行元数据未提供gitHead；以固定版本与integrity标识，不猜源码提交"
+    },
+    {
+      "name": "腾讯 QQ 插件（可选下载）",
+      "url": "https://github.com/tencent-connect/dsh-qqbot",
+      "license": "MIT",
+      "version": "0.5.5",
+      "upstreamCommit": "a4a01fa9f122e187733fbd990c3d6a41e4d7e538",
+      "integrity": "sha512-E15Du9xWfWk7CffRba8/ADHV9l6t9kDQ+U3ImLmB5Ffpnbwsm5ovYtHlhiENlILaqx0r+46cSxBiqhmu9Lz+IA=="
+    },
+    {
+      "name": "角色衍生图",
+      "url": "https://www.bilibili.com/opus/1247156596114456581",
+      "license": "CC BY-NC-SA 4.0",
+      "details": "docs/ASSETS.md"
+    },
+    {
+      "name": "NapCat / QQ 客户端（兼容路线，自行从官方渠道下载）",
+      "url": "https://github.com/NapNeko/NapCatQQ",
+      "license": "各自许可，不包含在本安装包中"
+    }
+  ],
+  "verification": {
+    "syntheticTests": "passed: 64 local tests including pinned DSH registry integration; no paid model or QQ calls",
+    "macosBundle": "local Node 24.22.2 extraction/start/restart/stop passed; QQ pending",
+    "windowsHardware": "pending",
+    "realModel": "pending",
+    "realQQ": "pending",
+    "chinaNetwork": "pending",
+    "multiTenantHosting": "not-implemented",
+    "ci": {
+      "status": "passed",
+      "url": "https://github.com/youseff37/echo-companion/actions/runs/41294805688",
+      "sourceCommit": "d6b12f62b187a46b4ce7ab99d8b05ba44a4eda04"
+    },
+    "container": "passed: Linux app container startup, pages, authenticated DSH inspection; QQ topology pending"
+  },
+  "releaseUrl": "https://github.com/youseff37/echo-companion/releases/tag/v0.2.0",
+  "sourceRef": "v0.2.0",
+  "sourceCommit": "d6b12f62b187a46b4ce7ab99d8b05ba44a4eda04"
+}
