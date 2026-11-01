@@ -78,7 +78,7 @@ export function createApp({engine,token,publicOrigin=null,onShutdown=null}){
         '/ai-install.txt':'docs/AI_INSTALL.md','/version-manifest.json':'version-manifest.json',
         '/download/':'site/index.html','/download/index.html':'site/index.html','/download/style.css':'site/style.css','/download/app.js':'site/app.js',
         '/download/version-manifest.json':'version-manifest.json','/download/ai-install.txt':'docs/AI_INSTALL.md',
-        '/download/assets/whale-hero.png':'public/assets/whale-hero.png','/download/assets/whale-expressions.png':'public/assets/whale-expressions.png',
+        '/download/assets/whale-hero.png':'public/assets/whale-hero.png','/download/assets/whale-cover-v2.png':'public/assets/whale-cover-v2.png','/download/assets/whale-expressions.png':'public/assets/whale-expressions.png',
         '/docs/AI_INSTALL.md':'docs/AI_INSTALL.md','/docs/HOSTING.md':'docs/HOSTING.md','/docs/PRODUCT_RESEARCH.md':'docs/PRODUCT_RESEARCH.md','/docs/DSH_QUICKSTART.md':'docs/DSH_QUICKSTART.md','/docs/ASSETS.md':'docs/ASSETS.md'};
       for(const name of ['AI_INSTALL.md','HOSTING.md','DSH_QUICKSTART.md','ASSETS.md','VERIFICATION.md']){
         files[`/docs/${name}`]=`docs/${name}`;
