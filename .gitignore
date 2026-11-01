@@ -7,3 +7,5 @@ node_modules/
 *.sqlite*
 *.log
 coverage/
+dist/
+.bundled/

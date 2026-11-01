@@ -31,3 +31,49 @@ test('daily cap reserves attempts and unknown usage stays visible; usage is char
   s.reserveCall(1,'2026-11-02');s.recordUsage({prompt_tokens:10,completion_tokens:3},'2026-11-01');assert.equal(s.db.prepare('SELECT inputTokens FROM usage WHERE day=?').get('2026-11-01').inputTokens,10);
  }finally{s.close();}
 });
+
+test('structured expression is optional and cannot inject transport instructions',()=>{
+ assert.equal(parseReply('{"reply":"米碗先放下，认真看这段。","emotion":"focused"}',80).emotion,'focused');
+ const untrusted=parseReply('{"reply":"好","emotion":"[CQ:image,file=secret]","memory_candidate":null}',80);
+ assert.equal(untrusted.reply,'好');assert.equal(untrusted.emotion,'neutral');
+ for(const raw of ['null','[]','true','42','"plain string"'])assert.throws(()=>parseReply(raw,80),e=>e.code==='MODEL_FORMAT');
+});
+
+test('fresh persona defaults use Whale-chan while existing user identity and model preferences survive loading',()=>{
+ const s=new Store(':memory:');try{
+  assert.equal(s.getConfig().name,'大肥鱼');assert.equal(s.getConfig().persona,'playful');assert.equal(s.getConfig().model,'deepseek-flash');
+  s.saveConfig({name:'用户起的名字',persona:'calm',model:'deepseek-reasoner',prompt:'少说话'});
+  const saved=s.getConfig();assert.equal(saved.name,'用户起的名字');assert.equal(saved.persona,'calm');assert.equal(saved.model,'deepseek-reasoner');assert.equal(saved.prompt,'少说话');
+ }finally{s.close();}
+});
+
+test('current DeepSeek IDs and retired saved aliases route explicitly without mutating user configuration',async()=>{
+ for(const [saved,wire,thinking] of [['deepseek-flash','deepseek-flash','disabled'],['deepseek-v4-pro','deepseek-v4-pro','disabled'],['deepseek-chat','deepseek-flash','disabled'],['deepseek-reasoner','deepseek-flash','enabled'],['deepseek-v4-flash','deepseek-flash','disabled']]){
+  const config={...DEFAULTS,model:saved};let calls=0;
+  await callDeepSeek({key:'synthetic-secret',config,memories:[],history:[],text:'合成测试',fetchImpl:async(_url,request)=>{
+   calls++;const body=JSON.parse(request.body);assert.equal(body.model,wire);assert.equal(body.thinking.type,thinking);
+   return Response.json({choices:[{message:{content:'{"reply":"合成输出","emotion":"smug"}'}}]});
+  }});
+  assert.equal(calls,1);assert.equal(config.model,saved);
+ }
+});
+
+test('invalid or truncated model output retains only validated actual usage, without a retry',async()=>{
+ for(const [content,reason,code] of [['invalid','stop','MODEL_FORMAT'],['{"reply":"半截内容"}','length','MODEL_LENGTH']]){
+  let calls=0;
+  await assert.rejects(callDeepSeek({key:'synthetic-secret',config:DEFAULTS,memories:[],history:[],text:'hello',fetchImpl:async()=>{
+   calls++;return Response.json({choices:[{finish_reason:reason,message:{content}}],usage:{prompt_tokens:50,completion_tokens:11,untrusted:'sensitive upstream dump'}});
+  }}),error=>error.code===code&&error.usage.prompt_tokens===50&&error.usage.completion_tokens===11&&!JSON.stringify(error).includes('sensitive upstream dump'));
+  assert.equal(calls,1);
+ }
+});
+
+test('the three existing voice settings keep the same fact and memory boundaries',()=>{
+ for(const persona of ['warm','playful','calm','custom']){
+  const prompt=promptFor({...DEFAULTS,persona},[{content:'明确批准的偏好'}]);
+  assert.ok(prompt.includes('鲸鱼娘'));assert.ok(prompt.includes('不故意')||prompt.includes('故意犯错'));assert.ok(prompt.includes('候选需要用户审核'));assert.ok(prompt.includes('不代表已经记住'));
+  assert.ok(prompt.includes('明确批准的偏好'));
+ }
+ assert.match(promptFor({...DEFAULTS,persona:'calm'}),/认真干活/);
+ assert.match(promptFor({...DEFAULTS,persona:'warm'}),/轻梗陪聊/);
+});

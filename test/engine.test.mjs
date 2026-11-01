@@ -175,3 +175,33 @@ test('a cancelled older connect request cannot leave an error on a newer success
   second.resolve({id:ACCOUNT});await current;
   assert.equal(engine.error,null,'an obsolete connection must not overwrite the current connection status');
 });
+
+test('three labelled offline scenes show rice banter, being caught and practical help without model or memory side effects',async t=>{
+ let calls=0;const {engine,store,sent}=setup(t,{model:async()=>{calls++;return result();}});
+ const scenes=engine.state().demoScenarios;
+ assert.deepEqual(scenes.map(s=>s.id),['rice','caught','help']);
+ for(const scene of scenes){
+  const demo=await engine.preview(scene.user,'demo');
+  assert.equal(demo.scenario,scene.id);assert.equal(demo.emotion,scene.emotion);assert.equal(demo.mode,'demo');
+  assert.match(demo.reply,/没有调用模型/);assert.match(demo.notice,/预先编写/);
+ }
+ assert.equal(calls,0);assert.equal(sent.length,0);assert.equal(store.usage().calls,0);
+ assert.deepEqual(store.memories(),[]);assert.deepEqual(store.history('web:preview',12),[]);
+});
+
+test('emotion stays presentation metadata; QQ receives plain text and memory remains pending',async t=>{
+ const {engine,store,sent}=setup(t,{model:async()=>result({reply:'这回我认错，继续干活。',emotion:'flustered',memory_candidate:'用户喜欢短回复'})});
+ engine.run('once');await engine.receive(event('whale-expression'));
+ assert.deepEqual(sent,[{scope:SCOPE,text:'这回我认错，继续干活。'}]);
+ assert.equal(store.memories(SCOPE)[0].status,'pending');
+ assert.equal(store.history(SCOPE,6).at(-1).content,'这回我认错，继续干活。');
+});
+
+test('format errors with provider usage consume one attempt with known counters rather than invented zero or unknown',async t=>{
+ const {engine,store}=setup(t,{model:async()=>{
+  const error=new AppError('MODEL_FORMAT','合成格式错误。',502);error.usage={prompt_tokens:50,completion_tokens:11};throw error;
+ }});
+ await assert.rejects(engine.preview('合成消息','live'),e=>e.code==='MODEL_FORMAT');
+ assert.equal(store.usage().calls,1);assert.equal(store.usage().inputTokens,50);assert.equal(store.usage().outputTokens,11);assert.equal(store.usage().unknownUsage,0);
+ assert.deepEqual(store.history('web:preview',12),[]);
+});

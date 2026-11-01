@@ -101,3 +101,20 @@ test('settings validation rejects external bridge addresses and model/limit valu
   for(const input of [{bridgeUrl:'ws://example.invalid:3001'},{bridgeUrl:'wss://127.0.0.1:3001'},{bridgeUrl:'ws://127.0.0.1:3001/?token=secret'},{model:'arbitrary-model'},{contextTurns:13},{maxReplyChars:1},{expectedAccount:'not-an-account'}])assert.throws(()=>validateSettings(input,previous));
   assert.deepEqual(previous,{name:'回声',expectedAccount:'',bridgeUrl:'ws://127.0.0.1:3001',scopes:[]});
 });
+
+test('DSH inspection is authenticated and reports no shared chat or QQ validation',async t=>{
+  const {request,auth}=await setup(t);
+  assert.equal((await request('/api/dsh/state')).status,401);
+  const response=await request('/api/dsh/state',{headers:auth});assert.equal(response.status,200);
+  const state=response.json();assert.equal(state.independent,true);assert.equal(state.chatVerified,false);assert.equal(state.running,null);
+  assert.equal(typeof state.installed,'boolean');assert.equal(response.text.includes('synthetic-'),false);
+  for(const key of ['key','token','directory','account','home'])assert.equal(Object.hasOwn(state,key),false);
+});
+
+test('the local download site serves its documented relative guides without exposing arbitrary files',async t=>{
+  const {request}=await setup(t);
+  for(const path of ['/ai-install.txt','/version-manifest.json','/download/','/download/version-manifest.json','/download/docs/AI_INSTALL.md','/download/docs/DSH_QUICKSTART.md','/download/docs/HOSTING.md','/download/docs/ASSETS.md','/download/docs/VERIFICATION.md']){
+    const response=await request(path);assert.equal(response.status,200,path);
+  }
+  const missing=await request('/download/docs/../../src/server.mjs');assert.equal(missing.status,404);
+});

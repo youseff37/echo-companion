@@ -1,0 +1,10 @@
+{
+  "nodeVersion": "v24.22.2",
+  "checkedAt": "2026-11-01",
+  "platforms": {
+    "macos-arm64": {"file": "node-v24.22.2-darwin-arm64.tar.gz", "url": "https://nodejs.org/dist/v24.22.2/node-v24.22.2-darwin-arm64.tar.gz", "sha256": "aa9549349e47dffaa42dcf95d6e06ade8c4bdafc980979883b88767670df385a"},
+    "windows-x64": {"file": "node-v24.22.2-win-x64.zip", "url": "https://nodejs.org/dist/v24.22.2/node-v24.22.2-win-x64.zip", "sha256": "ca1bff5d8ead13c9f2ea404a176db46bd430704d5b5113734049fa365e7799e2"}
+  },
+  "checksumsSource": "https://nodejs.org/dist/v24.22.2/SHASUMS256.txt",
+  "redistribution": "Node.js 官方发行版，保留 LICENSE（含第三方通知）和 npm 自身许可证。下载源可换为提供相同字节的镜像；始终校验固定 SHA-256。"
+}

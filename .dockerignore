@@ -1,7 +1,11 @@
 .git
 .runtime
-node_modules
 .env
 .env.*
+node_modules
+dist
+.bundled
+*.zip
+*.sqlite*
 *.log
-test
+.DS_Store

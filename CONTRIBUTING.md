@@ -1,6 +1,6 @@
 # 参与开发
 
-先阅读 [AGENTS.md](AGENTS.md) 和 [产品取舍](docs/PRODUCT_RESEARCH.md)。回声优先完成单拥有者的 QQ 文字聊天闭环，暂不扩展成插件平台或多租户托管服务。
+先阅读 [AGENTS.md](AGENTS.md) 和 [产品取舍](docs/PRODUCT_RESEARCH.md)。大肥鱼优先完成单拥有者的 QQ 文字聊天闭环，暂不扩展成插件平台或多租户托管服务。
 
 ## 本机开发
 

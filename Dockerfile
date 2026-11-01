@@ -5,6 +5,9 @@ RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 COPY src ./src
 COPY public ./public
 COPY docs ./docs
+COPY scripts ./scripts
+COPY site ./site
+COPY version-manifest.json runtime-sources.json ./
 RUN mkdir /data && chown node:node /data
 USER node
 ENV ECHO_DATA_DIR=/data ECHO_BIND=0.0.0.0

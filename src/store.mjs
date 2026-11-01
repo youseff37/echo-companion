@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, chmodSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-export const DEFAULTS = Object.freeze({name:'回声',persona:'warm',prompt:'',model:'deepseek-chat',maxReplyChars:180,dailyCallLimit:100,contextTurns:6,bridgeUrl:'ws://127.0.0.1:3001',expectedAccount:'',scopes:[]});
+export const DEFAULTS = Object.freeze({name:'大肥鱼',persona:'playful',prompt:'',model:'deepseek-flash',maxReplyChars:180,dailyCallLimit:100,contextTurns:6,bridgeUrl:'ws://127.0.0.1:3001',expectedAccount:'',scopes:[]});
 export const dayKey = () => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 export class Store {
   constructor(path) {

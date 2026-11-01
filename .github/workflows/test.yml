@@ -17,3 +17,37 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm test
       - run: npm audit --omit=dev
+      - name: Smoke check the single-owner container
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          docker build -t fish-verify .
+          docker run -d --name fish-verify -p 127.0.0.1:18787:8787 fish-verify
+          trap 'docker rm -f fish-verify >/dev/null' EXIT
+          curl -fsS --retry 15 --retry-connrefused --retry-delay 1 http://127.0.0.1:18787/ -o /dev/null
+          curl -fsS http://127.0.0.1:18787/download/ -o /dev/null
+          curl -fsS http://127.0.0.1:18787/ai-install.txt -o /dev/null
+          docker exec fish-verify node -e "const fs=require('fs'); const t=fs.readFileSync('/data/access.token','utf8').trim(); fetch('http://127.0.0.1:8787/api/dsh/state',{headers:{'X-Echo-Token':t}}).then(r=>{if(!r.ok)process.exit(1); return r.json()}).then(s=>{if(s.independent!==true||s.chatVerified!==false)process.exit(1)})"
+  windows-kit:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - name: Build fixed-runtime Windows kit
+        run: python scripts/package-release.py --platform windows-x64 --cache "${{ runner.temp }}/node-cache" --out-dir "${{ runner.temp }}/kits"
+      - name: Run the bundled runtime in a Chinese path with spaces
+        shell: pwsh
+        run: |
+          $destination = Join-Path $env:RUNNER_TEMP '肥鱼 安装验收'
+          $kit = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'kits/*.zip') | Select-Object -First 1
+          Expand-Archive $kit.FullName $destination
+          $root = Join-Path $destination 'dafeiyu-0.2.0'
+          & "$root/.bundled/node.exe" --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$root/.bundled/node.exe" --test "$root/test/*.test.mjs"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$root/.bundled/node.exe" "$root/scripts/doctor.mjs" --json
+          exit $LASTEXITCODE

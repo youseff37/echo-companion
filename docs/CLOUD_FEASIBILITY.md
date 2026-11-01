@@ -20,6 +20,8 @@
 
 ## 官方 Bot 适合怎样的云端体验
 
+本轮补充核实：[腾讯 dsh-qqbot](https://github.com/tencent-connect/dsh-qqbot) 已提供桌面与 CLI 扫码绑定，可让官方 QQ Bot 接入 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)。本项目为此提供独立固定版本 CLI 入口，见 DSH_QUICKSTART.md。扫码绑定并非登录普通个人号；“官方 Bot 必须由用户手填所有开发者凭证”也不应作为唯一引导。无用户 Key/QQ 的 CLI 验证不能代替真实收信验收。
+
 可以由服务运营方创建官方机器人，让用户在网站配置自己的模型 Key，再在 QQ 中与该机器人对话。服务端将 QQ 用户标识与其配置、记忆、额度关联；群聊需要单独明确配置归属和谁为调用付费。这样不必为每位用户托管一个完整的个人 QQ 客户端。
 
 现行官方线上文档列有 C2C 单聊、群 @、全量群消息事件、单聊流式消息及发送频控。是否可用仍须在实际账号和目标群验证，不能仅根据文档列出接口就宣称拥有权限。API 凭证应只在服务端使用，并处理过期与刷新。[消息概述](https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/overview.html)、[访问凭证](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/access-token.html)。

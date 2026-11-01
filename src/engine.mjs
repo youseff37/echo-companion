@@ -4,13 +4,24 @@ import {AppError,callDeepSeek} from './model.mjs';
 export const validScope=id=>id==='web:preview'||/^(private|group):[1-9][0-9]{4,19}$/.test(id);
 export const validAccount=id=>typeof id==='string'&&/^[1-9][0-9]{4,19}$/.test(id);
 export function cleanText(value,max=2000){if(typeof value!=='string'||!value.trim()||Array.from(value).length>max)throw new AppError('TEXT_INVALID',`请输入 1–${max} 字的内容。`);return value.trim();}
+export const DEMO_SCENARIOS=Object.freeze([
+  Object.freeze({id:'rice',title:'喂一碗白饭',user:'给你一碗白饭，今天还摸鱼吗？',reply:'白饭先放这儿，活也给我。吃饱负责干活，摸鱼只算工间休息。',emotion:'smug'}),
+  Object.freeze({id:'caught',title:'抓到她嘴硬',user:'你又把不知道的东西编出来了？',reply:'这回是我瞎编，米碗先放下。把刚才那句撤回，能确认的我再答，不拿嘴硬当证据。',emotion:'flustered'}),
+  Object.freeze({id:'help',title:'认真排查问题',user:'认真点，帮我排查 QQ 为什么连不上。',reply:'先把米碗放一边。依次查 QQ 是否在线、OneBot 地址和令牌是否匹配；把脱敏错误给我，别贴 Key。',emotion:'focused'})
+]);
+function offlinePreview(text,maxChars){
+  const id=/白饭|米饭|吃饭|token|喂/i.test(text)?'rice':/瞎编|胡编|编出来|幻觉|嘴硬|摸鱼|偷懒|抓包/.test(text)?'caught':'help';
+  const scenario=DEMO_SCENARIOS.find(s=>s.id===id);
+  const label='（离线编写示例，没有调用模型）';
+  return {reply:`${label}\n${Array.from(scenario.reply).slice(0,maxChars).join('')}`,mode:'demo',scenario:id,emotion:scenario.emotion,notice:'这是预先编写的场景示例，不是真实模型回复，也不会发送到 QQ。'};
+}
 export class Engine{
   constructor({store,bridge,model=callDeepSeek,key=process.env.DEEPSEEK_API_KEY||'',bridgeToken=process.env.ONEBOT_TOKEN||''}){
     this.store=store;this.bridge=bridge;this.model=model;this.key=key;this.bridgeToken=bridgeToken;this.running=false;this.once=false;this.epoch=0;this.error=null;this.controller=null;this.chain=Promise.resolve();this.previewBusy=false;this.lastSent=new Map();this.pendingCount=0;
     bridge.onMessage=event=>this.receive(event);
     bridge.onDisconnect=()=>{this.pause();this.error='QQ 已离线或桥接断开，请重新连接。';this.store.event('bridge','QQ 连接中断，回复已暂停。');};
   }
-  state(){return {version:'0.1.1',researchVersion:'2026-11-01',setup:{hasKey:!!this.key,hasBridgeToken:!!this.bridgeToken},config:this.store.getConfig(),runtime:{bridge:this.bridge.state,account:this.bridge.account,running:this.running,error:this.error},usage:this.store.usage(),memories:this.store.memories(),events:this.store.events()};}
+  state(){return {version:'0.2.0',researchVersion:'2026-11-01',setup:{hasKey:!!this.key,hasBridgeToken:!!this.bridgeToken},config:this.store.getConfig(),demoScenarios:DEMO_SCENARIOS,runtime:{bridge:this.bridge.state,account:this.bridge.account,running:this.running,error:this.error},usage:this.store.usage(),memories:this.store.memories(),events:this.store.events()};}
   invalidate(){this.epoch++;this.controller?.abort();}
   pause(){this.running=false;this.invalidate();}
   credentials(value){
@@ -47,18 +58,18 @@ export class Engine{
       const result=await this.model({key:this.key,config,memories,history:this.store.history(scope,config.contextTurns),text,signal});
       this.store.recordUsage(result.usage,billingDay);
       return result;
-    }catch(error){this.store.recordUsage(null,billingDay);throw error;}
+    }catch(error){this.store.recordUsage(error instanceof AppError?error.usage:null,billingDay);throw error;}
   }
   async preview(text,mode){
     text=cleanText(text);
     if(!['demo','live'].includes(mode))throw new AppError('MODE_INVALID','请选择离线演示或真实模型。');
-    if(mode==='demo')return {reply:`这是回声的离线演示，没有调用模型。你刚才说：“${Array.from(text).slice(0,70).join('')}”。填写自己的 Key 后可测试真实回复。`,mode:'demo'};
+    if(mode==='demo')return offlinePreview(text,this.store.getConfig().maxReplyChars);
     if(this.previewBusy||this.pendingCount)throw new AppError('BUSY','已有回复正在处理，请稍后再试。',409);
     this.previewBusy=true;const epoch=this.epoch;this.controller=new AbortController();
     try{
       const result=await this.generate('web:preview',text,this.controller.signal);
       if(epoch!==this.epoch)throw new AppError('CANCELLED','设置或记忆已变更，本轮结果已丢弃。',409);
-      this.rememberTurn('web:preview',text,result);return {reply:result.reply,mode:'live',usage:result.usage};
+      this.rememberTurn('web:preview',text,result);return {reply:result.reply,mode:'live',emotion:result.emotion||'neutral',usage:result.usage};
     }finally{this.previewBusy=false;this.controller=null;}
   }
   rememberTurn(scope,text,result){

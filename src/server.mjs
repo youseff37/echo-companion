@@ -3,11 +3,13 @@ import {randomBytes,timingSafeEqual} from 'node:crypto';
 import {mkdirSync,readFileSync,writeFileSync,existsSync,chmodSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {dirname,resolve,join,extname} from 'node:path';
+import {execFile} from 'node:child_process';
 import {Store} from './store.mjs';
 import {acquireInstance} from './instance.mjs';
 import {Engine,validScope,validAccount,cleanText} from './engine.mjs';
 import {Bridge,validateBridgeUrl} from './bridge.mjs';
-import {AppError} from './model.mjs';
+import {AppError,SUPPORTED_MODELS} from './model.mjs';
+import {readDshState} from '../scripts/dsh.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 export function validateSettings(input,previous){
@@ -16,7 +18,7 @@ export function validateSettings(input,previous){
   for(const key of Object.keys(input))if(!allowed.has(key))throw new AppError('SETTING_INVALID','包含未知设置字段。');
   if(input.name!==undefined)c.name=cleanText(input.name,30);
   if(input.prompt!==undefined){if(typeof input.prompt!=='string'||input.prompt.length>1500)throw new AppError('SETTING_INVALID','角色补充最多 1500 字。');c.prompt=input.prompt;}
-  for(const [key,values] of [['persona',['warm','playful','calm','custom']],['model',['deepseek-chat','deepseek-reasoner']]])if(input[key]!==undefined){if(!values.includes(input[key]))throw new AppError('SETTING_INVALID','性格或模型不受支持。');c[key]=input[key];}
+  for(const [key,values] of [['persona',['warm','playful','calm','custom']],['model',SUPPORTED_MODELS]])if(input[key]!==undefined){if(!values.includes(input[key]))throw new AppError('SETTING_INVALID','性格或模型不受支持。');c[key]=input[key];}
   for(const [key,min,max] of [['maxReplyChars',40,500],['dailyCallLimit',1,1000],['contextTurns',0,12]])if(input[key]!==undefined){if(!Number.isInteger(input[key])||input[key]<min||input[key]>max)throw new AppError('SETTING_INVALID',`${key} 超出支持范围 ${min}–${max}。`);c[key]=input[key];}
   if(input.bridgeUrl!==undefined)c.bridgeUrl=validateBridgeUrl(input.bridgeUrl);
   if(input.expectedAccount!==undefined){if(input.expectedAccount!==''&&!validAccount(input.expectedAccount))throw new AppError('ACCOUNT_INVALID','QQ 号格式无效。');c.expectedAccount=input.expectedAccount;}
@@ -24,7 +26,7 @@ export function validateSettings(input,previous){
 }
 async function body(req){let size=0;const chunks=[];for await(const chunk of req){size+=chunk.length;if(size>16384)throw new AppError('BODY_LARGE','请求体过大。',413);chunks.push(chunk);}try{const value=JSON.parse(Buffer.concat(chunks).toString()||'{}');if(!value||Array.isArray(value)||typeof value!=='object')throw Error();return value;}catch{throw new AppError('JSON_INVALID','请求 JSON 无效。');}}
 const equal=(a,b)=>typeof a==='string'&&/^[a-f0-9]{64}$/.test(a)&&a.length===b.length&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
-export function createApp({engine,token,publicOrigin=null}){
+export function createApp({engine,token,publicOrigin=null,onShutdown=null}){
   const server=http.createServer(async(req,res)=>{
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Frame-Options','DENY');
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
@@ -39,9 +41,11 @@ export function createApp({engine,token,publicOrigin=null}){
         if(origin&&origin!==`http://${host}`&&origin!==publicOrigin)throw new AppError('ORIGIN_INVALID','不允许的请求来源。',403);
         if(req.method==='GET'&&url.pathname==='/api/state')return json(200,engine.state());
         if(req.method==='GET'&&url.pathname==='/api/doctor')return json(200,{ok:true,bridge:engine.bridge.state,running:engine.running,hasKey:!!engine.key});
+        if(req.method==='GET'&&url.pathname==='/api/dsh/state')return json(200,readDshState());
         if(req.method==='POST'){
           const b=await body(req);
           switch(url.pathname){
+            case '/api/shutdown':if(!onShutdown)throw new AppError('UNAVAILABLE','此服务未启用进程控制。',409);json(200,{ok:true,stopping:true});setImmediate(onShutdown);return;
             case '/api/settings':{const old=engine.store.getConfig();const c=validateSettings(b,old);engine.pause();if(c.expectedAccount!==old.expectedAccount||c.bridgeUrl!==old.bridgeUrl)engine.bridge.disconnect();engine.store.saveConfig(c);break;}
             case '/api/credentials':engine.credentials(b);break;
             case '/api/credentials/clear':engine.clearCredentials();break;
@@ -69,9 +73,19 @@ export function createApp({engine,token,publicOrigin=null}){
         throw new AppError('NOT_FOUND','接口不存在。',404);
       }
       if(req.method!=='GET'&&req.method!=='HEAD')throw new AppError('METHOD','请求方法不受支持。',405);
-      const files={'/':'public/index.html','/index.html':'public/index.html','/style.css':'public/style.css','/app.js':'public/app.js','/mark.svg':'public/mark.svg','/docs/AI_INSTALL.md':'docs/AI_INSTALL.md','/docs/HOSTING.md':'docs/HOSTING.md','/docs/PRODUCT_RESEARCH.md':'docs/PRODUCT_RESEARCH.md'};
+      const files={'/':'public/index.html','/index.html':'public/index.html','/style.css':'public/style.css','/app.js':'public/app.js','/mark.svg':'public/mark.svg',
+        '/assets/whale-hero.png':'public/assets/whale-hero.png','/assets/whale-expressions.png':'public/assets/whale-expressions.png',
+        '/ai-install.txt':'docs/AI_INSTALL.md','/version-manifest.json':'version-manifest.json',
+        '/download/':'site/index.html','/download/index.html':'site/index.html','/download/style.css':'site/style.css','/download/app.js':'site/app.js',
+        '/download/version-manifest.json':'version-manifest.json','/download/ai-install.txt':'docs/AI_INSTALL.md',
+        '/download/assets/whale-hero.png':'public/assets/whale-hero.png','/download/assets/whale-expressions.png':'public/assets/whale-expressions.png',
+        '/docs/AI_INSTALL.md':'docs/AI_INSTALL.md','/docs/HOSTING.md':'docs/HOSTING.md','/docs/PRODUCT_RESEARCH.md':'docs/PRODUCT_RESEARCH.md','/docs/DSH_QUICKSTART.md':'docs/DSH_QUICKSTART.md','/docs/ASSETS.md':'docs/ASSETS.md'};
+      for(const name of ['AI_INSTALL.md','HOSTING.md','DSH_QUICKSTART.md','ASSETS.md','VERIFICATION.md']){
+        files[`/docs/${name}`]=`docs/${name}`;
+        files[`/download/docs/${name}`]=`docs/${name}`;
+      }
       if(!files[url.pathname])throw new AppError('NOT_FOUND','页面不存在。',404);
-      const path=join(root,files[url.pathname]);const content=readFileSync(path);const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.md':'text/plain; charset=utf-8','.svg':'image/svg+xml'};
+      const path=join(root,files[url.pathname]);const content=readFileSync(path);const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.md':'text/plain; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.svg':'image/svg+xml'};
       res.writeHead(200,{'Content-Type':types[extname(path)]});res.end(req.method==='HEAD'?undefined:content);
     }catch(e){if(!res.headersSent)json(e instanceof AppError?e.status:500,{error:e instanceof AppError?e.code:'INTERNAL',message:e instanceof AppError?e.message:'操作失败；请检查本机状态，勿公开密钥或聊天内容。'});else res.end();}
   });
@@ -86,9 +100,18 @@ export function start(){
   const store=new Store(join(directory,'echo.sqlite'));const bridge=new Bridge();const engine=new Engine({store,bridge});
   const publicOrigin=process.env.ECHO_PUBLIC_ORIGIN||null;if(publicOrigin&&new URL(publicOrigin).protocol!=='https:')throw new Error('服务器访问地址必须为 HTTPS。');
   const bind=process.env.ECHO_BIND||'127.0.0.1';if(!['127.0.0.1','0.0.0.0'].includes(bind))throw new Error('监听地址不受支持。');
-  const port=Number(process.env.PORT||8787);const server=createApp({engine,token,publicOrigin});
+  const port=Number(process.env.PORT||8787);const server=createApp({engine,token,publicOrigin,onShutdown:()=>stop()});
   server.on('error',e=>{console.error(e.code==='EADDRINUSE'?'8787 或指定端口已被占用，请停止旧实例或设置 PORT。':'本机服务无法启动。');process.exitCode=1;bridge.disconnect();store.close();release();});
-  server.listen(port,bind,()=>{const origin=publicOrigin||`http://127.0.0.1:${server.address().port}`;console.log(`回声 0.1.1 · 仅一个所有者 · 回复默认暂停\n控制链接（不要分享）：${origin}/#${token}`);});
+  server.listen(port,bind,()=>{
+    const origin=publicOrigin||`http://127.0.0.1:${server.address().port}`;
+    writeFileSync(join(directory,'service.json'),JSON.stringify({pid:process.pid,port:server.address().port}),{mode:0o600});
+    console.log(`大肥鱼 0.2.0 · 本机 QQ 养鱼计划 · 回复默认暂停\n控制链接（不要分享）：${origin}/#${token}`);
+    if(process.env.ECHO_OPEN_BROWSER==='1'&&!publicOrigin){
+      const link=`${origin}/#${token}`;
+      const command=process.platform==='darwin'?'open':process.platform==='win32'?'rundll32.exe':null;
+      if(command)execFile(command,process.platform==='win32'?['url.dll,FileProtocolHandler',link]:[link],()=>{});
+    }
+  });
   let closing=false;const stop=()=>{if(closing)return;closing=true;engine.pause();bridge.disconnect();server.close(()=>{store.close();release();process.exit(0);});setTimeout(()=>process.exit(0),3000).unref();};
   process.on('SIGINT',stop);process.on('SIGTERM',stop);return {server,engine,store};
 }

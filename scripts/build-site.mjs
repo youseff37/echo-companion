@@ -1,0 +1,12 @@
+import {mkdirSync,cpSync,copyFileSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import {resolve} from 'node:path';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const out=resolve(root,'dist');mkdirSync(out,{recursive:true});
+cpSync(resolve(root,'site'),out,{recursive:true});
+cpSync(resolve(root,'public/assets'),resolve(out,'assets'),{recursive:true});
+copyFileSync(resolve(root,'version-manifest.json'),resolve(out,'version-manifest.json'));
+copyFileSync(resolve(root,'docs/AI_INSTALL.md'),resolve(out,'ai-install.txt'));
+mkdirSync(resolve(out,'docs'),{recursive:true});
+for(const name of ['AI_INSTALL.md','HOSTING.md','DSH_QUICKSTART.md','ASSETS.md','VERIFICATION.md'])copyFileSync(resolve(root,'docs',name),resolve(out,'docs',name));
+console.log('静态站已写入 dist/，无需服务端、账号或外部字体。');

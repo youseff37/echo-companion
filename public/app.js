@@ -3,7 +3,7 @@
 (() => {
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const pageNames = { overview: '总览', connection: '连接 QQ', persona: '性格与表达', memory: '记忆手册', usage: '用量与记录', install: '安装与部署' };
+  const pageNames = { overview: '养鱼室', connection: '接到 QQ', persona: '性格与表达', memory: '记忆手册', usage: '用量与记录', install: '带她回家' };
   const eventNames = { bridge: 'QQ 桥接状态', run: '回复运行状态', confirmed: '接口已确认发送', connected: 'QQ 已连接', disconnected: '连接已断开', reply: '回复已提交', sent: '回复已确认', received: '收到消息', skipped: '本轮未回复', failed: '处理未完成', error: '需要留意', paused: '已暂停回复', started: '已开启回复', memory: '记忆已更新', model: '模型调用', settings: '设置已保存', preview: '本机试聊', unknown: '发送结果未确认' };
   const numberFormat = new Intl.NumberFormat('zh-CN');
   let state = null;
@@ -18,14 +18,20 @@
   let toastTimer = null;
   let memoryFingerprint = '';
   let scopeFingerprint = '';
+  let dshLastChecked = 0;
+  let dshRequest = null;
   let token = '';
 
   function readToken() {
     const raw = location.hash.slice(1);
+    let candidate = '';
     if (raw) {
-      try { token = decodeURIComponent(raw.startsWith('token=') ? raw.slice(6) : raw); }
-      catch { token = raw; }
-      try { sessionStorage.setItem('echo.managementToken', token); } catch { /* Session memory still works when browser storage is unavailable. */ }
+      try { candidate = decodeURIComponent(raw.startsWith('token=') ? raw.slice(6) : raw); }
+      catch { candidate = ''; }
+    }
+    if (/^[a-f0-9]{64}$/.test(candidate)) {
+      token = candidate;
+      try { sessionStorage.setItem('echo.managementToken', token); } catch { /* In-memory auth still works. */ }
       history.replaceState(null, '', location.pathname + location.search);
     } else {
       try { token = sessionStorage.getItem('echo.managementToken') || ''; } catch { token = ''; }
@@ -103,6 +109,7 @@
       else button.removeAttribute('aria-current');
       if (key === name) setText('#current-page', title);
     }
+    if (name === 'install' && serviceReady && Date.now() - dshLastChecked > 30000) refreshDshStatus();
     if (focus) {
       window.scrollTo({ top: 0, behavior: 'auto' });
       $('#main').focus({ preventScroll: true });
@@ -135,6 +142,7 @@
         $('#token-gate').hidden = true;
         renderState(!initialized || forceForms);
         initialized = true;
+        if (dshLastChecked === 0) refreshDshStatus();
         return result;
       } catch (error) {
         setUnavailable(error);
@@ -170,7 +178,7 @@
     const bridgeLabel = bridgeNames[runtime.bridge] || '未核对';
     $('#connection-badge').className = 'status-pill ' + (runtime.bridge === 'error' ? 'error' : connected ? 'connected' : 'neutral');
     setText('#connection-badge span', runtime.running ? 'QQ 已连接 · 回复中' : connected ? 'QQ 已连接 · 已暂停' : bridgeLabel);
-    setText('#hero-companion-status', runtime.running ? `${config.name || '回声'}正在回应` : '安静等待，随时准备好');
+    setText('#hero-companion-status', runtime.running ? `${config.name || '大肥鱼'}正在回应` : '安静等待，随时准备好');
     setText('#key-summary', setup.hasKey ? '已配置' : '未配置');
     setText('#bridge-summary', bridgeLabel);
     setText('#scope-summary', enabled ? `${enabled} 个已启用` : '尚未选择');
@@ -200,12 +208,18 @@
   function fillConfig(config) {
     $('#bridge-url').value = config.bridgeUrl || 'ws://127.0.0.1:3001';
     $('#account-id').value = config.expectedAccount || '';
-    $('#companion-name').value = config.name || '回声';
+    $('#companion-name').value = config.name || '大肥鱼';
     $('#persona-prompt').value = config.prompt || '';
     $('#reply-length').value = config.maxReplyChars ?? 120;
     $('#daily-call-limit').value = config.dailyCallLimit ?? 100;
     $('#context-turns').value = config.contextTurns ?? 8;
-    $('#model-name').value = config.model || 'deepseek-chat';
+    const selectedModel = config.model || 'deepseek-flash';
+    if (![...$('#model-name').options].some(option => option.value === selectedModel)) {
+      const option = create('option', '', selectedModel + '（已有配置兼容）');
+      option.value = selectedModel;
+      $('#model-name').append(option);
+    }
+    $('#model-name').value = selectedModel;
     const persona = $$('input[name="persona"]').find(input => input.value === config.persona);
     if (persona) persona.checked = true;
   }
@@ -369,9 +383,93 @@
     list.scrollTop = list.scrollHeight;
   }
 
+  async function refreshDshStatus() {
+    if (!serviceReady || dshRequest) return dshRequest;
+    const button = $('#refresh-dsh-status');
+    if (button) button.disabled = true;
+    setText('#dsh-route-status', '正在核对本机 DSH 依赖与专用配置；这不是 QQ 在线检查。');
+    dshRequest = (async () => {
+      try {
+        const result = await request('/api/dsh/state');
+        if (!result || typeof result.installed !== 'boolean') throw new Error('状态格式不完整');
+        setText('#dsh-route-status', result.installed ? (result.chatVerified === true ? '已检测到 DSH 依赖，并有聊天验收记录；当前 QQ 状态仍请在 DSH 面板核对。' : '已检测到 DSH 依赖与专用配置；QQ 绑定和真实聊天仍未验收。') : '尚未检测到完整 DSH 依赖与专用配置；这不等于 QQ 已绑定或未绑定。');
+        const parts = [];
+        for (const [key, label] of [['dsh','DSH'],['qqPlugin','QQ 插件'],['pnpm','pnpm']]) {
+          const value = result.versions?.[key];
+          const required = result.requiredVersions?.[key];
+          parts.push(`${label}：${typeof value === 'string' && value ? value : '未检测到'}${typeof required === 'string' && required ? `（要求 ${required}）` : ''}`);
+        }
+        if (typeof result.profile === 'string') parts.push('独立配置：' + result.profile);
+        setText('#dsh-version-status', parts.join(' · ') + '。不读取账号身份、二维码或 Key，也不判断 QQ 当前在线状态。');
+      } catch {
+        setText('#dsh-route-status', 'DSH 本机状态尚未核实。可以在终端运行检查命令，或稍后重新检查。');
+        setText('#dsh-version-status', '读取失败不能推断安装、QQ 绑定或聊天是否成功；请以独立 DSH 面板和验收记录为准。');
+      } finally {
+        dshLastChecked = Date.now();
+        dshRequest = null;
+        if (button) button.disabled = false;
+      }
+    })();
+    return dshRequest;
+  }
+  async function copyDshCommand(action) {
+    const commands = {install:'node scripts/dsh.mjs install', start:'node scripts/dsh.mjs start', doctor:'node scripts/dsh.mjs doctor --json'};
+    const text = commands[action];
+    if (!text) return;
+    try { await navigator.clipboard.writeText(text); notify('命令已复制。请在项目目录的本机终端执行，网页不会替你运行。'); }
+    catch {
+      let box = $('#copy-dsh-fallback');
+      if (!box) { box = create('textarea', 'copy-fallback'); box.id = 'copy-dsh-fallback'; box.rows = 2; box.setAttribute('aria-label', '本机 DSH 命令'); $('#dsh-version-status').after(box); }
+      box.value = text; box.focus(); box.select(); notify('请复制选中的命令，在项目目录的本机终端执行。');
+    }
+  }
+
+  const fallbackExamples = [
+    {id:'rice',title:'喂一碗白饭',user:'给你一碗白饭，今天还摸鱼吗？',reply:'白饭先放这儿，活也给我。吃饱负责干活，摸鱼只算工间休息。',emotion:'smug'},
+    {id:'caught',title:'抓到她嘴硬',user:'你又把不知道的东西编出来了？',reply:'这回是我瞎编，米碗先放下。把刚才那句撤回，能确认的我再答，不拿嘴硬当证据。',emotion:'flustered'},
+    {id:'help',title:'认真排查',user:'认真点，帮我排查 QQ 为什么连不上。',reply:'先把米碗放一边。依次查 QQ 是否在线、OneBot 地址和令牌是否匹配；把脱敏错误给我，别贴 Key。',emotion:'focused'}
+  ];
+  let shownExample = 'rice';
+  function setExpression(emotion) {
+    const allowed = ['neutral','happy','smug','flustered','focused'];
+    $('.chat-avatar').dataset.emotion = allowed.includes(emotion) ? emotion : 'neutral';
+  }
+  function showExample(id) {
+    const examples = Array.isArray(state?.demoScenarios) ? state.demoScenarios : fallbackExamples;
+    const scene = examples.find(item => item.id === id) || fallbackExamples.find(item => item.id === id);
+    if (!scene) return;
+    shownExample = id;
+    $('#preview-messages').replaceChildren();
+    const label = create('p', 'example-label', '以下为预先编写的场景示例 · 非模型生成 · 不发送到 QQ');
+    $('#preview-messages').append(label);
+    appendPreview(scene.user, 'user', '你 · 示例');
+    appendPreview(scene.reply, '', '大肥鱼 · 预设示例');
+    setExpression(scene.emotion);
+    $$('[data-example]').forEach(button => { const active = button.dataset.example === id; button.classList.toggle('selected', active); button.setAttribute('aria-pressed', active ? 'true' : 'false'); });
+    setText('#preview-mode-badge', '预设示例');
+    setText('#preview-cost-note', '正在查看预先编写的对话，不是模型刚刚生成的回复。勾选真实试聊才会使用你的 Key。');
+  }
+  async function copyInstallPrompt() {
+    const guide = new URL('/ai-install.txt', location.href).href;
+    const text = `请帮我安装“大肥鱼 · QQ 养鱼计划”。先阅读 ${guide} 和项目 https://github.com/youseff37/echo-companion 的最新安装说明，核对版本、系统要求和验证状态。先完成免费本机路径；官方 QQ × DSH 与个人号 NapCat 桥接是不同路线，不要混用。扫码、填写 DeepSeek Key、QQ 账号及允许回复的会话由我操作，不向聊天记录上传任何密钥、二维码或私人消息。不要自动开始回复；真实发消息前先由我指定测试会话。服务器部署尚待验收，不要宣称已经可用。`;
+    try { await navigator.clipboard.writeText(text); notify('安装说明已复制，交给能操作你电脑的 AI 即可。'); }
+    catch {
+      let box = $('#copy-install-fallback');
+      if (!box) { box = create('textarea', 'copy-fallback'); box.id = 'copy-install-fallback'; box.rows = 6; box.setAttribute('aria-label', '复制给安装 AI 的说明'); $('#view-install .page-heading').after(box); }
+      box.value = text; showView('install'); box.focus(); box.select(); notify('当前浏览器不允许自动复制，请复制选中的安装说明。');
+    }
+  }
+
   function bind() {
     $$('.nav-button').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
     $$('[data-go]').forEach(button => button.addEventListener('click', () => showView(button.dataset.go)));
+    $$('[data-example]').forEach(button => button.addEventListener('click', () => { if (pendingActions === 0) showExample(button.dataset.example); }));
+    $('#copy-ai').addEventListener('click', copyInstallPrompt);
+    $('#copy-ai-install').addEventListener('click', copyInstallPrompt);
+    $('#refresh-dsh-status').addEventListener('click', refreshDshStatus);
+    $('#copy-dsh-install').addEventListener('click', () => copyDshCommand('install'));
+    $('#copy-dsh-start').addEventListener('click', () => copyDshCommand('start'));
+    $('#copy-dsh-doctor').addEventListener('click', () => copyDshCommand('doctor'));
     $('#dismiss-toast').addEventListener('click', () => { $('#toast').hidden = true; });
     $('#retry-state').addEventListener('click', () => refresh());
     $('#refresh-events').addEventListener('click', async () => { const result = await refresh(); if (result) notify('运行记录已更新。'); });
@@ -381,6 +479,7 @@
       token = $('#management-token').value.trim();
       try { sessionStorage.setItem('echo.managementToken', token); } catch { /* In-memory access is sufficient. */ }
       $('#management-token').value = '';
+      dshLastChecked = 0;
       await refresh();
     });
     $('#bridge-form').addEventListener('submit', async event => {
@@ -426,7 +525,7 @@
     });
     $('#persona-form').addEventListener('submit', async event => {
       event.preventDefault();
-      const persona = $('input[name="persona"]:checked')?.value || 'warm';
+      const persona = $('input[name="persona"]:checked')?.value || 'playful';
       await mutate('/api/settings', { name: $('#companion-name').value.trim(), persona, prompt: $('#persona-prompt').value.trim(), maxReplyChars: Number($('#reply-length').value) }, '性格与表达已保存。已确认记忆保持不变。', { form: event.target });
     });
     $('#limits-form').addEventListener('submit', async event => {
@@ -464,14 +563,17 @@
       const text = $('#preview-text').value.trim();
       if (!text) return;
       const live = $('#preview-live').checked;
-      if (live && !state.setup.hasKey) { notify('请先在“连接 QQ”页配置自己的 DeepSeek API Key。', true); return; }
+      if (live && !state.setup.hasKey) { notify('请先在“接到 QQ”页配置自己的 DeepSeek API Key。', true); return; }
       pendingActions += 1; updateButtons();
       $('#preview-form').setAttribute('aria-busy', 'true');
       appendPreview(text, 'user', '你 · 本机试聊');
       $('#preview-text').value = '';
       try {
         const result = await request('/api/preview', { method: 'POST', body: { text, mode: live ? 'live' : 'demo' } });
-        appendPreview(typeof result.reply === 'string' ? result.reply : '服务未返回可显示的回复。', '', result.mode === 'demo' ? '离线演示 · 固定示例，未调用模型' : `${state.config.name || '回声'} · 真实模型`);
+        appendPreview(typeof result.reply === 'string' ? result.reply : '服务未返回可显示的回复。', '', result.mode === 'demo' ? '离线编写示例 · 未调用模型' : `${state.config.name || '大肥鱼'} · 真实模型`);
+        setExpression(result.emotion);
+        if (result.notice) setText('#preview-cost-note', result.notice);
+        setText('#preview-mode-badge', result.mode === 'demo' ? '离线编写示例' : '真实模型回复');
         await refresh();
       } catch (error) {
         appendPreview(error.message, 'error', '本次试聊未完成');
@@ -487,6 +589,7 @@
   readToken();
   bind();
   showView(currentView, false);
+  showExample(shownExample);
   refresh();
   setInterval(() => { if (!document.hidden && pendingActions === 0) refresh(); }, 6000);
 })();
