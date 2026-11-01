@@ -1,4 +1,4 @@
-# 0.2.0 验证记录 · 2026-11-01
+# 0.2.1 验证记录 · 2026-11-01
 
 以下区分本机、自动化、真实模型与真实平台，不把一项通过当作全部通过。精确发布链接、SHA-256与最终CI见仓库根目录version-manifest.json。
 
@@ -32,3 +32,9 @@
 ## 已通过的远端CI
 
 [发布代码 d6b12f62 的CI记录](https://github.com/youseff37/echo-companion/actions/runs/41294805688)：Linux、macOS、Windows测试、Windows完整包与Linux容器烟雾检查全部成功；默认测试63项通过、1项可选DSH集成跳过，本机另外用已安装的固定DSH执行了全部64项。CI不代替Windows11真人验收或QQ实际收信。
+
+## 0.2.1 安装入口修正
+
+面板复制的DSH命令按Mac/Windows使用包内Node；Windows新增dsh-install.cmd和dsh-start.cmd，不要求双击.ps1或安装系统Node。源码用户仍用node命令。依赖和聊天逻辑未变，保留0.2.0验证记录；0.2.1发布代码CI单独核对。
+
+[0.2.1发布代码9b781c61的CI](https://github.com/youseff37/echo-companion/actions/runs/41295748381)全部通过：三系统测试、Windows完整包、Linux容器检查；Mac完整包内置运行时实际输出的DSH诊断命令也已核对为包内Node路径。

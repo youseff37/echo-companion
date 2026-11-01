@@ -6,7 +6,30 @@
 
 ## 安装和启动
 
-在本项目目录打开终端。发布包附带 Node；源码用户先安装本项目要求的 Node.js 与 npm。
+完整发布包附带 Node 和 npm，不需要系统预装 Node。解压后可以直接双击以下入口：
+
+- **Mac：**`scripts/dsh-install.command` 安装，`scripts/dsh-start.command` 启动。
+- **Windows：**`scripts/dsh-install.cmd` 安装，`scripts/dsh-start.cmd` 启动。`.cmd` 会调用配套 PowerShell 脚本，仅为本次进程使用执行策略参数，不修改系统执行策略；不要双击 `.ps1`，Windows 默认可能在编辑器中打开它。
+
+如需手动运行，在**解压后的项目目录**打开终端，使用完整包自带的 Node。
+
+Mac 终端：
+
+```sh
+./.bundled/bin/node scripts/dsh.mjs doctor --json
+./.bundled/bin/node scripts/dsh.mjs install
+./.bundled/bin/node scripts/dsh.mjs start
+```
+
+Windows PowerShell：
+
+```powershell
+& .\.bundled\node.exe scripts/dsh.mjs doctor --json
+& .\.bundled\node.exe scripts/dsh.mjs install
+& .\.bundled\node.exe scripts/dsh.mjs start
+```
+
+只有从 GitHub 克隆**源码**的用户才需要自行安装本项目要求的 Node.js 与 npm，然后使用：
 
 ```sh
 node scripts/dsh.mjs doctor --json
@@ -14,9 +37,9 @@ node scripts/dsh.mjs install
 node scripts/dsh.mjs start
 ```
 
-发布包也可双击 `scripts/dsh-install.command` / `scripts/dsh-start.command`，Windows 使用同名 `.ps1`。命令不会安装系统级包，不要求预装 pnpm。Windows 官方路线直接运行 Node，不需要 WSL2 或 Docker。
+这些命令不会安装系统级包，不要求预装 pnpm。Windows 官方路线直接运行 Node，不需要 WSL2 或 Docker。
 
-启动进入独立 DSH 本机页面，默认监听 `127.0.0.1:3080`。浏览器没有自动打开时，使用终端给出的**完整本机启动链接**，包含本次访问凭证；直接访问不含凭证的根地址可能返回 401。这条完整链接只给本机所有者使用，不复制到公开 issue 或聊天。`node scripts/dsh.mjs start --no-open` 可禁止自动开页。关闭终端或按 Ctrl+C 停止这条路线。它不会随主聊天台的暂停按钮一起停止，也不承诺电脑休眠后在线。
+启动进入独立 DSH 本机页面，默认监听 `127.0.0.1:3080`。浏览器没有自动打开时，使用终端给出的**完整本机启动链接**，包含本次访问凭证；直接访问不含凭证的根地址可能返回 401。这条完整链接只给本机所有者使用，不复制到公开 issue 或聊天。在对应平台的 `start` 命令后加 `--no-open` 可禁止自动开页。关闭终端或按 Ctrl+C 停止这条路线。它不会随主聊天台的暂停按钮一起停止，也不承诺电脑休眠后在线。
 
 首次配置由本人完成：
 
@@ -41,9 +64,7 @@ QQ 插件原生仍会注册 `qqbot_send_file`，所以本入口额外在 preset 
 
 再次执行 `install` 会检查固定版本，保留已存在的 profile、绑定和访问设置，不重新套用默认模板。上游 `--from-default-profile` 会覆盖 profile，本入口只在全新 profile 使用它。不同目录的安装不共享状态；如需使用其它本机目录，在终端设置 `DAFEIYU_DSH_DIR`（路径可含中文或空格），之后每次安装和启动都使用同一设置。
 
-```sh
-node scripts/dsh.mjs doctor --json
-```
+诊断时使用上方对应平台的 `doctor --json` 完整命令；完整包继续使用 `.bundled` 中的 Node，源码用户使用系统 `node`。
 
 JSON 只报告本地安装版本、是否完整与命令，不读取或返回 Key、QQ 身份、绝对用户路径、聊天内容，也不假装检测到了 QQ 在线状态。HTTP `/api/dsh/state` 只读；下载和执行 npm 必须由本人或获得本机操作授权的 AI 在终端发起。
 
@@ -57,7 +78,7 @@ JSON 只报告本地安装版本、是否完整与命令，不读取或返回 Ke
 
 ## 给安装 AI 的指令
 
-> 在本项目目录执行 `node scripts/dsh.mjs doctor --json`。未安装时执行 `node scripts/dsh.mjs install`，成功后执行 `node scripts/dsh.mjs start`。使用项目附带的 Node/npm；保持进程监听 127.0.0.1，不改为公网。命令失败按阶段排查，不打印环境变量或原始凭据日志。停在用户填写 DSH Key、手机 QQ 绑定和选择测试范围的位置，由用户亲自操作；未经明确指定测试会话，不发真实消息。主聊天台和 DSH 不共享状态，不能用主聊天台“已配置”判断 DSH 就绪。安装成功标准是 doctor 检出全部固定版本且 DSH 页面能打开；聊天成功标准是用户指定的 QQ 对端实际收到一条回复，两者分别记录。
+> 先检测操作系统和包类型，在本项目目录按上面的平台命令运行 doctor、install、start。完整 Mac 包使用 `./.bundled/bin/node scripts/dsh.mjs ...`；完整 Windows 包在 PowerShell 使用 `& .\.bundled\node.exe scripts/dsh.mjs ...`，或调用配套 `.cmd` 入口；只有源码包才使用系统 `node`，不要假定完整包用户的 PATH 中有 Node。保持进程监听 127.0.0.1，不改为公网。命令失败按阶段排查，不打印环境变量或原始凭据日志。停在用户填写 DSH Key、手机 QQ 绑定和选择测试范围的位置，由用户亲自操作；未经明确指定测试会话，不发真实消息。主聊天台和 DSH 不共享状态，不能用主聊天台“已配置”判断 DSH 就绪。安装成功标准是 doctor 检出全部固定版本且 DSH 页面能打开；聊天成功标准是用户指定的 QQ 对端实际收到一条回复，两者分别记录。
 
 ## 验证边界与来源
 
