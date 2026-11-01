@@ -303,8 +303,8 @@
       }
       const remove = create('button', 'text-button danger-text', memory.status === 'pending' ? '不记得' : '忘记'); remove.type = 'button';
       remove.addEventListener('click', () => {
-        if (memory.status === 'approved' && !confirm('删除这条长期记忆？近期聊天上下文可能仍包含相关内容，需要时也可以清空对应上下文。')) return;
-        mutate('/api/memories/' + encodeURIComponent(memory.id), undefined, '这条长期记忆已删除。', { method: 'DELETE' });
+        if (memory.status === 'approved' && !confirm('删除这条长期记忆，并清空该会话的近期上下文？进行中的回复会暂停。')) return;
+        mutate('/api/memories/' + encodeURIComponent(memory.id), undefined, '记忆已删除，该会话近期上下文已清空，旧任务已暂停。', { method: 'DELETE' });
       });
       bottom.append(remove); card.append(top, body, bottom); list.append(card);
     }

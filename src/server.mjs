@@ -88,7 +88,7 @@ export function start(){
   const bind=process.env.ECHO_BIND||'127.0.0.1';if(!['127.0.0.1','0.0.0.0'].includes(bind))throw new Error('监听地址不受支持。');
   const port=Number(process.env.PORT||8787);const server=createApp({engine,token,publicOrigin});
   server.on('error',e=>{console.error(e.code==='EADDRINUSE'?'8787 或指定端口已被占用，请停止旧实例或设置 PORT。':'本机服务无法启动。');process.exitCode=1;bridge.disconnect();store.close();release();});
-  server.listen(port,bind,()=>{const origin=publicOrigin||`http://127.0.0.1:${server.address().port}`;console.log(`回声 0.1.0 · 仅一个所有者 · 回复默认暂停\n控制链接（不要分享）：${origin}/#${token}`);});
+  server.listen(port,bind,()=>{const origin=publicOrigin||`http://127.0.0.1:${server.address().port}`;console.log(`回声 0.1.1 · 仅一个所有者 · 回复默认暂停\n控制链接（不要分享）：${origin}/#${token}`);});
   let closing=false;const stop=()=>{if(closing)return;closing=true;engine.pause();bridge.disconnect();server.close(()=>{store.close();release();process.exit(0);});setTimeout(()=>process.exit(0),3000).unref();};
   process.on('SIGINT',stop);process.on('SIGTERM',stop);return {server,engine,store};
 }

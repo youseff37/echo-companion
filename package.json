@@ -1,6 +1,6 @@
 {
   "name": "echo-companion",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "回声：记忆可核对、默认不打扰的本地 QQ 陪伴伙伴",
   "type": "module",
