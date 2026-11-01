@@ -1,4 +1,4 @@
-# 大肥鱼：给本机安装 AI 的说明（0.2.0）
+# 大肥鱼：给本机安装 AI 的说明（0.2.1）
 
 仓库：https://github.com/youseff37/echo-companion
 机器可读发布清单：仓库根目录 version-manifest.json

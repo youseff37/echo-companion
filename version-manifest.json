@@ -1,29 +1,27 @@
 {
   "schemaVersion": 1,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "product": "大肥鱼 · QQ 养鱼计划",
   "repository": "https://github.com/youseff37/echo-companion",
-  "releasedAt": "2026-11-01T09:53:16Z",
+  "releasedAt": null,
   "artifacts": [
     {
       "id": "macos-arm64",
       "name": "macOS · Apple Silicon",
       "requirements": "macOS 14+ · M 系列芯片",
-      "status": "published",
-      "url": "https://github.com/youseff37/echo-companion/releases/download/v0.2.0/dafeiyu-0.2.0-macos-arm64.zip",
-      "sha256": "dac60b2dfd061c59329014a2e7e13c78dfc1ee64971972a6d9bfc4be99be5346",
-      "validation": "macOS 26.2 / M 系列本机运行检查通过；QQ 对端收信待验收",
-      "bytes": 48678329
+      "status": "pending",
+      "url": null,
+      "sha256": null,
+      "validation": "macOS 26.2 / M 系列本机运行检查通过；QQ 对端收信待验收"
     },
     {
       "id": "windows-x64",
       "name": "Windows · x64",
       "requirements": "Windows 11 x64",
-      "status": "published",
-      "url": "https://github.com/youseff37/echo-companion/releases/download/v0.2.0/dafeiyu-0.2.0-windows-x64.zip",
-      "sha256": "4414501e6238a18fd91ab543ec51d628f6dc0e5962f841a58f6e1c7a0bf85f43",
-      "validation": "Windows CI 构建与中文空格路径运行检查通过；测试版，待 Windows 11 实机和 QQ 收信验收",
-      "bytes": 44318341
+      "status": "pending",
+      "url": null,
+      "sha256": null,
+      "validation": "Windows CI 构建与中文空格路径运行检查通过；测试版，待 Windows 11 实机和 QQ 收信验收"
     }
   ],
   "sources": [
@@ -82,13 +80,13 @@
     "chinaNetwork": "pending",
     "multiTenantHosting": "not-implemented",
     "ci": {
-      "status": "passed",
-      "url": "https://github.com/youseff37/echo-companion/actions/runs/41294805688",
-      "sourceCommit": "d6b12f62b187a46b4ce7ab99d8b05ba44a4eda04"
+      "status": "pending",
+      "previousVersion": "0.2.0",
+      "previousRun": "https://github.com/youseff37/echo-companion/actions/runs/41294805688"
     },
     "container": "passed: Linux app container startup, pages, authenticated DSH inspection; QQ topology pending"
   },
-  "releaseUrl": "https://github.com/youseff37/echo-companion/releases/tag/v0.2.0",
-  "sourceRef": "v0.2.0",
-  "sourceCommit": "d6b12f62b187a46b4ce7ab99d8b05ba44a4eda04"
+  "releaseUrl": null,
+  "sourceRef": "v0.2.1",
+  "sourceCommit": null
 }

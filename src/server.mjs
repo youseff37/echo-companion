@@ -105,7 +105,7 @@ export function start(){
   server.listen(port,bind,()=>{
     const origin=publicOrigin||`http://127.0.0.1:${server.address().port}`;
     writeFileSync(join(directory,'service.json'),JSON.stringify({pid:process.pid,port:server.address().port}),{mode:0o600});
-    console.log(`大肥鱼 0.2.0 · 本机 QQ 养鱼计划 · 回复默认暂停\n控制链接（不要分享）：${origin}/#${token}`);
+    console.log(`大肥鱼 0.2.1 · 本机 QQ 养鱼计划 · 回复默认暂停\n控制链接（不要分享）：${origin}/#${token}`);
     if(process.env.ECHO_OPEN_BROWSER==='1'&&!publicOrigin){
       const link=`${origin}/#${token}`;
       const command=process.platform==='darwin'?'open':process.platform==='win32'?'rundll32.exe':null;

@@ -2,6 +2,8 @@
 
 **把熟悉的 DeepSeek 大肥鱼，养到自己的 QQ 里。** 蓝发鲸鱼娘、会接梗的短句聊天、适量白饭与摸鱼梗，以及能查看、确认、删除的相处记忆。
 
+[打开中文下载站](https://youseff37.github.io/echo-companion/) · [下载双系统完整包](https://github.com/youseff37/echo-companion/releases) · [可迁移的静态站源码](site/)
+
 这是社区衍生的免费开源实验项目，不隶属于 DeepSeek 或腾讯。仓库路径保留 `echo-companion`；0.1.x“回声”是此前的技术原型，0.2.0 起以大肥鱼体验为产品中心。代码独立实现，角色来源和素材许可单独列在 [ASSETS](docs/ASSETS.md)。
 
 ![大肥鱼聊天台](docs/dashboard.jpg)
@@ -21,7 +23,7 @@
 
 ## 下载后启动
 
-从 [Releases](https://github.com/youseff37/echo-companion/releases) 选择对应系统的 **0.2.0 完整包**，核对 [版本清单](version-manifest.json) 的 SHA-256，再解压到普通可写文件夹。完整包包含固定版本 Node 与 `ws`，不要求安装 Swift、编译器或 Node。
+从 [Releases](https://github.com/youseff37/echo-companion/releases) 选择对应系统的 最新完整包，核对 [版本清单](version-manifest.json) 的 SHA-256，再解压到普通可写文件夹。完整包包含固定版本 Node 与 `ws`，不要求安装 Swift、编译器或 Node。
 
 - **Mac：**macOS 14+，Apple Silicon；双击根目录 `启动大肥鱼.command`。Intel Mac 暂不支持。下载安全提示按系统实际信息处理，勿关闭系统安全保护。
 - **Windows：**Windows 11 x64；双击根目录 `启动大肥鱼.cmd`。不需要 WSL2 就能打开聊天台；选择 NapCat/Docker 路线时才需要相应虚拟化环境。当前仍标记“测试版，待实机验收”。

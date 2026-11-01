@@ -1,6 +1,6 @@
 {
   "name": "echo-companion",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "大肥鱼：把熟悉的 DeepSeek 鲸鱼娘养进 QQ 的本机聊天台与安装整合包",
   "type": "module",

@@ -21,7 +21,7 @@ export class Engine{
     bridge.onMessage=event=>this.receive(event);
     bridge.onDisconnect=()=>{this.pause();this.error='QQ 已离线或桥接断开，请重新连接。';this.store.event('bridge','QQ 连接中断，回复已暂停。');};
   }
-  state(){return {version:'0.2.0',researchVersion:'2026-11-01',setup:{hasKey:!!this.key,hasBridgeToken:!!this.bridgeToken},config:this.store.getConfig(),demoScenarios:DEMO_SCENARIOS,runtime:{bridge:this.bridge.state,account:this.bridge.account,running:this.running,error:this.error},usage:this.store.usage(),memories:this.store.memories(),events:this.store.events()};}
+  state(){return {version:'0.2.1',researchVersion:'2026-11-01',setup:{hasKey:!!this.key,hasBridgeToken:!!this.bridgeToken},config:this.store.getConfig(),demoScenarios:DEMO_SCENARIOS,runtime:{bridge:this.bridge.state,account:this.bridge.account,running:this.running,error:this.error},usage:this.store.usage(),memories:this.store.memories(),events:this.store.events()};}
   invalidate(){this.epoch++;this.controller?.abort();}
   pause(){this.running=false;this.invalidate();}
   credentials(value){

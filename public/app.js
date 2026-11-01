@@ -413,14 +413,21 @@
     return dshRequest;
   }
   async function copyDshCommand(action) {
-    const commands = {install:'node scripts/dsh.mjs install', start:'node scripts/dsh.mjs start', doctor:'node scripts/dsh.mjs doctor --json'};
-    const text = commands[action];
-    if (!text) return;
-    try { await navigator.clipboard.writeText(text); notify('命令已复制。请在项目目录的本机终端执行，网页不会替你运行。'); }
+    const argumentsByAction = { install: 'install', start: 'start', doctor: 'doctor --json' };
+    const args = argumentsByAction[action];
+    if (!args) return;
+    const platform = navigator.userAgent + ' ' + (navigator.platform || '');
+    const windows = /Windows|Win32|Win64/i.test(platform);
+    const mac = /Macintosh|MacIntel|MacPPC|Mac OS/i.test(platform);
+    const sourceCommand = `node scripts/dsh.mjs ${args}`;
+    const text = windows ? String.raw`& .\.bundled\node.exe scripts/dsh.mjs ${args}` : mac ? `./.bundled/bin/node scripts/dsh.mjs ${args}` : sourceCommand;
+    const instructions = windows || mac ? `已复制完整包命令，请在项目目录执行。源码用户改用：${sourceCommand}。网页不会运行命令。` : '已复制源码命令，请在已安装 Node.js 的项目目录执行。网页不会运行命令。';
+    try { await navigator.clipboard.writeText(text); notify(instructions); }
     catch {
       let box = $('#copy-dsh-fallback');
-      if (!box) { box = create('textarea', 'copy-fallback'); box.id = 'copy-dsh-fallback'; box.rows = 2; box.setAttribute('aria-label', '本机 DSH 命令'); $('#dsh-version-status').after(box); }
-      box.value = text; box.focus(); box.select(); notify('请复制选中的命令，在项目目录的本机终端执行。');
+      if (!box) { box = create('textarea', 'copy-fallback'); box.id = 'copy-dsh-fallback'; box.rows = 3; box.setAttribute('aria-label', '本机 DSH 命令'); $('#dsh-version-status').after(box); }
+      box.value = text; box.focus(); box.select();
+      notify((windows || mac ? '请复制选中的完整包命令，在项目目录执行。源码用户改用：' + sourceCommand : '请复制选中的源码命令，在项目目录执行，需先安装 Node.js') + '。网页不会运行命令。');
     }
   }
 

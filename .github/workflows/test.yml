@@ -45,7 +45,8 @@ jobs:
           $destination = Join-Path $env:RUNNER_TEMP '肥鱼 安装验收'
           $kit = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'kits/*.zip') | Select-Object -First 1
           Expand-Archive $kit.FullName $destination
-          $root = Join-Path $destination 'dafeiyu-0.2.0'
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $root = Join-Path $destination ('dafeiyu-' + $version)
           & "$root/.bundled/node.exe" --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & "$root/.bundled/node.exe" --test "$root/test/*.test.mjs"
