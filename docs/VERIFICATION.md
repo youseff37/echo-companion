@@ -36,3 +36,5 @@
 ## 0.2.1 安装入口修正
 
 面板复制的DSH命令按Mac/Windows使用包内Node；Windows新增dsh-install.cmd和dsh-start.cmd，不要求双击.ps1或安装系统Node。源码用户仍用node命令。依赖和聊天逻辑未变，保留0.2.0验证记录；0.2.1发布代码CI单独核对。
+
+[0.2.1发布代码9b781c61的CI](https://github.com/youseff37/echo-companion/actions/runs/41295748381)全部通过：三系统测试、Windows完整包、Linux容器检查；Mac完整包内置运行时实际输出的DSH诊断命令也已核对为包内Node路径。
