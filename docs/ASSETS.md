@@ -17,6 +17,7 @@
 | --- | --- | --- |
 | public/assets/whale-hero.png | Q版全身主视觉：抱饭碗、机灵表情 | 内置image_gen，以公开社区形象作身份参考，重新生成姿势与构图，透明PNG |
 | public/assets/whale-expressions.png | 得意、被抓包、认真帮忙三种状态 | 内置image_gen，以本次主视觉统一身份，透明横向三表情 |
+| public/assets/whale-cover-v2.png | 网站首屏新封面：微笑挥手、轻快站姿与流动鲸尾 | 内置image_gen，沿用已署名角色身份，重新生成姿势与构图，透明PNG；旧图保留 |
 
 生成时间2026-11-01。ToAPIs未配置密钥，使用内置工具；没有调用项目用户的DeepSeek Key。生成记录与提示词见 generation-prompts.txt。没有直接打包参考图原文件，也没有把参考图当作项目新作品。
 
