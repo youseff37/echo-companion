@@ -1,0 +1,51 @@
+# Single owner only. Native localhost deployment is simpler for a first QQ test.
+services:
+  napcat:
+    image: mlikiowa/napcat-docker@sha256:c5a74db0e7ce14dcc42c1ed1facdc8b0a47b29de65afe069c795608c149fa2cb
+    profiles: [arm64]
+    volumes:
+      - ./.runtime/napcat/config:/app/napcat/config
+      - qq-data:/app/.config/QQ
+    ports:
+      - "127.0.0.1:6099:6099"
+      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:8787:8787"
+    restart: "no"
+    mem_limit: 2g
+    pids_limit: 512
+  app:
+    build: .
+    profiles: [arm64]
+    network_mode: service:napcat
+    depends_on: [napcat]
+    volumes: [echo-data:/data]
+    environment:
+      ECHO_DATA_DIR: /data
+      ECHO_BIND: 0.0.0.0
+    restart: "no"
+  napcat-x64:
+    image: mlikiowa/napcat-docker@sha256:69c5ca84ec226d658d0d5cd19997c6c89169da3206faa2948c2dc67d669b6406
+    profiles: [x64]
+    volumes:
+      - ./.runtime/napcat/config:/app/napcat/config
+      - qq-data:/app/.config/QQ
+    ports:
+      - "127.0.0.1:6099:6099"
+      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:8787:8787"
+    restart: "no"
+    mem_limit: 2g
+    pids_limit: 512
+  app-x64:
+    build: .
+    profiles: [x64]
+    network_mode: service:napcat-x64
+    depends_on: [napcat-x64]
+    volumes: [echo-data:/data]
+    environment:
+      ECHO_DATA_DIR: /data
+      ECHO_BIND: 0.0.0.0
+    restart: "no"
+volumes:
+  echo-data:
+  qq-data:

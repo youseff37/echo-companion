@@ -1,0 +1,21 @@
+{
+  "name": "echo-companion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "回声：记忆可核对、默认不打扰的本地 QQ 陪伴伙伴",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "bridge:init": "node scripts/bridge.mjs init",
+    "bridge:start": "node scripts/bridge.mjs start"
+  },
+  "dependencies": {
+    "ws": "8.22.1"
+  },
+  "license": "MIT"
+}
