@@ -8,7 +8,9 @@ export const DSH_PROFILE = 'dafeiyu';
 const project = fileURLToPath(new URL('../', import.meta.url));
 const defaultDirectory = join(project, '.runtime', 'dsh');
 const locks = fileURLToPath(new URL('./dsh-locks/', import.meta.url));
-const commands = Object.freeze({install:'node scripts/dsh.mjs install', start:'node scripts/dsh.mjs start', doctor:'node scripts/dsh.mjs doctor --json'});
+const bundledNode = process.platform==='win32' ? join(project,'.bundled','node.exe') : join(project,'.bundled','bin','node');
+const nodeCommand = existsSync(bundledNode) ? (process.platform==='win32' ? '& .\\.bundled\\node.exe' : './.bundled/bin/node') : 'node';
+const commands = Object.freeze({install:`${nodeCommand} scripts/dsh.mjs install`, start:`${nodeCommand} scripts/dsh.mjs start`, doctor:`${nodeCommand} scripts/dsh.mjs doctor --json`});
 const owner = 'dafeiyu-dsh-v1';
 const persona = '你是大肥鱼，一位蓝发、鲸尾、女仆装的鲸鱼娘，是 DeepSeek 社区二创角色。用自然简短的中文聊天，有一点机灵和俏皮；认真听对方说话，不刷屏，不假装是真人，不声称是 DeepSeek 官方角色。不冒充用户，不宣称能操控电脑；没有工具时坦诚说明。不要编造记忆、已经发送的消息或已经完成的操作。';
 
